@@ -5,6 +5,7 @@
     <title>D3 Floor Plan DEMO</title>
     
     <script src="js/d3.v3.min.js" charset="utf-8"></script>
+    <script src="shapes.js" charset="utf-8"></script>
     
     <link rel="stylesheet" type="text/css" href="css/style.css">
 
@@ -12,19 +13,171 @@
 <body>
 
 <svg>
-  <rect x="0" y="0" width="50" height="50" />
+  <g id="base-elements">
+      <!--
+    <rect x="0" y="0" width="50" height="50" />
+    <line x1="5" y1="75" x2="5" y2="175" style="stroke:rgb(225,0,0);stroke-width:5" />
+      -->
+  </g>
+  <g id="created-elements">
+  </g>
 </svg>
     
 <script>
     
+    /*
+    
+    PSUEDO-CODE
+    
+    //click on a base-elements shape:
+        //drag is automatically active with the call function
+        //create a copy of shape on mousedown
+        //on mouseup, create a copy of shape at new position, put into created-elements, delete original shape
+        
+    //click on a created-elements shape:
+        //execute drag on selected shape
+    
+    
+    //data is initially an array of the base-elements objects
+    //object attributes should be able to be accessed with (d.stuff)
+    //data gets added to with each successful new datum / element creation
+    */
+    
     //basic move functionality
+    //eventually replace this function with one that directly changes the element x,y according to d3.event ? will make it easier to then access element x,y for future transforms, rather than having to go through transform attribute
     //bug: top-left corner of element snaps to pointer
     function move() {
       d3.select(this)
         .attr("transform", "translate(" + d3.event.x + "," +         d3.event.y + ")");
     };
     
-    d3.select("rect").call(d3.behavior.drag().on("drag", move));
+/*********************************************/
+//datum / element updating functions
+    // original
+    function createOriginal() {
+        //create copy of base-elements rect
+        d3.select("#base-elements").append(this[0][0].tagName.toLowerCase())
+            .attr("x", 0)
+            .attr("y", 0)
+            .attr("width", 50)
+            .attr("height", 50)
+                .on("mousedown", function() {
+                    d3.select(this).call(createOriginal)
+                })
+                .on("mouseup", function() {
+                    d3.select(this).call(createNew).remove()
+                })
+                .call(drag);
+    };
+    
+    /*
+    function createOriginal() {
+        //create copy of base-elements rect
+        var element = d3.select("#base-elements").append(this[0][0].tagName.toLowerCase())
+            .attr("x", 0)
+            .attr("y", 0)
+            .attr("width", 50)
+            .attr("height", 50)
+                .on("mousedown", function() {
+                    d3.select(this).call(createOriginal)
+                })
+                .on("mouseup", function() {
+                    d3.select(this).call(createNew).remove()
+                })
+                .call(drag);
+    */
+    function createNew() {
+        //create new datum and new element
+        //add new datum to the 'database'
+        shapes[0].created.rect[(createdIndexes.rect)] = shapes[0].base.rect
+        
+        d3.select("#created-elements").append(this[0][0].tagName.toLowerCase())
+            .attr("x", d3.event.x) //not ideal, get (this) x,y
+            .attr("y", d3.event.y)
+            .attr("width", 50)
+            .attr("height", 50)
+                .call(drag);
+    };
+    
+    function shapeToJSON(shape) {
+        //if rect, line, etc
+        return {
+            "x": "0",
+            "y": "0",
+            "width": 50,
+            "height": 50,
+            "perimeter": null,
+            "area": null
+        }
+    }
+/*********************************************/
+    
+    /*
+    //at some point, figure out refactoring to just use this function with appropriate args
+    function createCopy(g) {
+        d3.select(g).append(this[0][0].tagName.toLowerCase())
+            .attr("x", 100)
+            .attr("y", 100)
+            .attr("width", 50)
+            .attr("height", 50);
+    };
+    */
+    
+    //change to use drag.origin(function) - but this sounds like to implement easily, need the elements to be bound to data
+    var drag = d3.behavior.drag().on("drag", move);
+    
+    var createdIndexes = {
+        //reference to var shapes somehow? more dynamic
+        rect: 0
+    };
+    
+    /*
+    var base = d3.select("#base-elements").selectAll("line, rect")
+        .on("mousedown", function() {
+            d3.select(this).call(createOriginal)
+        })
+        .on("mouseup", function() {
+            d3.select(this).call(createNew).remove()
+        })
+        .call(drag);
+    */
+    
+    //d3 procedural.
+    var base = d3.select("#base-elements")
+        .selectAll("rect") //select all possible base elements
+            .data(shapes)
+        .enter().append("rect") //append based on d.type?
+            .attr("x", shapes[0].base.rect.x) //function(d) { do something with d? }
+            .attr("y", shapes[0].base.rect.y) 
+            .attr("width", shapes[0].base.rect.width.toString())
+            .attr("height", shapes[0].base.rect.height.toString())
+            .on("mousedown", function() {
+                console.log(this.getAttribute("width"));
+                d3.select(this).call(createOriginal)
+            })
+            .on("mouseup", function() {
+                console.log(this);
+                d3.select(this).call(createNew).remove()
+            })
+            .call(drag);
+    
+    
+    //funct for adding text to plans
+        //base element text? different typog for different purposes
+    
+    //functionality for deleting new datum/element if not dragged to 'drawing area' of svg
+    //use the d3.drag listeners for this? dragstart, dragend
+    
+    //functionality for rotating elements (diff cursor? handles on elements? - preferred)
+        //handles on-click of element, drag on extended mousedown
+    
+    //auto-snap of element edges... probably complex rules about which elements snap to which others, in what circumstances etc
+    
+    //functionality for 'saving' combinations of elements as new base elements?
+    
+    
+    
+    
     
 </script>
 
